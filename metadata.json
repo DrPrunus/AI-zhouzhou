@@ -1,0 +1,6 @@
+{
+  "name": "电子男友 AI 微信分身",
+  "description": "基于真实微信聊天记录生成的电子男友数字分身，精准还原语气习惯、口癖与恋爱互动，让女朋友随时随地获得暖心陪伴回复。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
