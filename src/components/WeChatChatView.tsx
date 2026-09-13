@@ -15,13 +15,17 @@ import {
   Gift,
   HelpCircle,
   RotateCcw,
+  Wand2,
+  X,
+  Check,
 } from "lucide-react";
-import { BoyfriendPersona, ChatMessage, ChatSettings } from "../types";
+import { BoyfriendPersona, ChatMessage, ChatSettings, PersonaCorrection } from "../types";
 import { playSendSound, playReceiveSound } from "../utils/audio";
 
 interface WeChatChatViewProps {
   persona: BoyfriendPersona;
   settings: ChatSettings;
+  onUpdatePersona?: (newPersona: BoyfriendPersona) => void;
   onOpenDrawer: () => void;
   onOpenShare: () => void;
   onOpenImport: () => void;
@@ -56,40 +60,40 @@ function getDiverseClientReply(msg: string, persona: BoyfriendPersona): { replie
   if (text.includes("阿峻") || text.includes("周周") || text.includes("张溯峻") || text.includes("峻峻")) {
     return pick([
       { replies: [`在呢在呢！一听${herCall}叫${bfName}，手头的事瞬间全放下了🥰`, `今天遇到什么好玩的事啦？快跟我讲讲~`], mood: "温柔心动" },
-      { replies: [`周周随时待命！今天我家${herCall}想我几次啦？`], mood: "宠溺笑" },
-      { replies: [`到！张溯峻长官随叫随到，长官有什么吩咐？`], mood: "搞怪调皮" },
-      { replies: [`阿峻在呢，听到你的声音心里就暖洋洋的~`], mood: "深情温暖" },
+      { replies: [`周周在呢！今天我家${herCall}有没有想我呀？`], mood: "宠溺笑" },
+      { replies: [`张溯峻随时就绪，可人有什么事情尽管跟我说~`], mood: "认真体贴" },
+      { replies: [`阿峻在呢，听到可人叫我心里就暖洋洋的~`], mood: "深情温暖" },
     ]);
   }
 
   if (text.includes("累") || text.includes("烦") || text.includes("加班") || text.includes("气") || text.includes("领导")) {
     return pick([
-      { replies: [`摸摸头，抱抱我家${herCall}🥺`, `辛苦啦，那些破事不值得生闷气，晚上阿峻带你去吃大餐解解压！`], mood: "心疼体贴" },
-      { replies: [`抱紧紧！谁惹我家可人宝贝不高兴了？看我待会儿去帮你出气！`, `晚上给你揉揉肩捶捶背好不好？`], mood: "霸道护短" },
-      { replies: [`可人乖，今天辛苦了。下班就什么都别想，阿峻开车去接你，我们去吃火锅~`], mood: "温暖陪伴" },
+      { replies: [`摸摸头，抱抱我家${herCall}🥺`, `辛苦啦，别跟那些烦心事生气，晚点阿峻带可人去吃好吃的解解压！`], mood: "心疼体贴" },
+      { replies: [`抱紧紧！谁惹我家宝宝不高兴了？阿峻永远站在可人这边！`, `晚上给你好好捏捏肩放松一下好不好？`], mood: "温柔守护" },
+      { replies: [`可人乖，今天辛苦了。下班阿峻去接你，别想烦心事啦~`], mood: "温暖陪伴" },
     ]);
   }
 
   if (text.includes("想你") || text.includes("爱你") || text.includes("抱抱") || text.includes("亲亲")) {
     return pick([
-      { replies: [`${bfName}也超级超级想${herCall}！🥰`, `恨不得现在就闪现到你面前把你抱在怀里~`], mood: "甜蜜心动" },
-      { replies: [`听到可人说想我，整个人都甜化了！`, `啵一个，今晚见面抱抱必须加倍！`], mood: "心花怒放" },
-      { replies: [`我也爱你呀可人宝，满脑子都是你~`], mood: "深情款款" },
+      { replies: [`${bfName}也超级超级想${herCall}！🥰`, `待会儿下班就想飞奔过去把你抱在怀里~`], mood: "甜蜜心动" },
+      { replies: [`听到可人说想我，整个人都甜化了！`, `啵一个，今晚见面的拥抱先给你预存着！`], mood: "心花怒放" },
+      { replies: [`我也爱你呀宝宝，满脑子都是你~`], mood: "深情款款" },
     ]);
   }
 
   if (text.includes("在干嘛") || text.includes("在做什么") || text.includes("在忙吗")) {
     return pick([
       { replies: [`刚忙完手头一点事，正拿着手机想我家${herCall}呢，你就发过来了！`], mood: "心有灵犀" },
-      { replies: [`在工位上随时守着可人的微信呀，一看到消息就秒回啦~`], mood: "随时待命" },
-      { replies: [`正在看下班带你去吃什么好吃的呢，可人今天想吃烤肉还是潮汕牛肉？`], mood: "兴致勃勃" },
+      { replies: [`随时守着可人的微信呀，一看到消息就秒回啦~`], mood: "随时待命" },
+      { replies: [`正在看晚上下班带你去吃什么呢，今天可人想吃什么都听你的！`], mood: "温柔体贴" },
     ]);
   }
 
   if (text.includes("吃") || text.includes("饿") || text.includes("饭") || text.includes("奶茶")) {
     return pick([
       { replies: [`${herCall}饿啦？想吃什么，阿峻晚上带你去大吃一顿！`], mood: "宠溺笑" },
-      { replies: [`想喝奶茶记得点半糖温热的嗷，不许贪凉肚子痛~`], mood: "细心关怀" },
+      { replies: [`记得按时吃饭嗷，照顾好自己不许饿肚子~`], mood: "细心关怀" },
     ]);
   }
 
@@ -104,6 +108,7 @@ function getDiverseClientReply(msg: string, persona: BoyfriendPersona): { replie
 export const WeChatChatView: React.FC<WeChatChatViewProps> = ({
   persona,
   settings,
+  onUpdatePersona,
   onOpenDrawer,
   onOpenShare,
   onOpenImport,
@@ -132,6 +137,12 @@ export const WeChatChatView: React.FC<WeChatChatViewProps> = ({
   const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [activeVoicePlaying, setActiveVoicePlaying] = useState<string | null>(null);
 
+  // ex-skill Correction State
+  const [correctionTarget, setCorrectionTarget] = useState<{ id: string; text: string } | null>(null);
+  const [correctionInput, setCorrectionInput] = useState("");
+  const [isSubmittingCorrection, setIsSubmittingCorrection] = useState(false);
+  const [learnedNotice, setLearnedNotice] = useState<string | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingWatchdogRef = useRef<NodeJS.Timeout | null>(null);
@@ -150,6 +161,45 @@ export const WeChatChatView: React.FC<WeChatChatViewProps> = ({
       if (typingWatchdogRef.current) clearTimeout(typingWatchdogRef.current);
     };
   }, []);
+
+  const handleSubmitCorrection = async () => {
+    if (!correctionInput.trim() || !correctionTarget) return;
+    setIsSubmittingCorrection(true);
+    try {
+      const res = await fetch("/api/correct", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          persona,
+          wrongMessage: correctionTarget.text,
+          correctionInput: correctionInput.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.persona) {
+        if (onUpdatePersona) {
+          onUpdatePersona(data.persona);
+        }
+        const time = `${new Date().getHours().toString().padStart(2, "0")}:${new Date().getMinutes().toString().padStart(2, "0")}`;
+        const ackMsg: ChatMessage = {
+          id: `bf-ack-${Date.now()}`,
+          sender: "boyfriend",
+          text: data.boyfriendAck || `收到长官批评！都是${persona.realName || "张溯峻"}不好，阿峻把可人的话记在脑门上啦，以后坚决改！🥰`,
+          timestamp: time,
+          mood: "光速认错改好",
+        };
+        setMessages((prev) => [...prev, ackMsg]);
+        setLearnedNotice(`✨ 纠偏成功！已作为最高优先级铁律写入 ${data.persona.boyfriendName || "阿峻"} 的行为库`);
+        setTimeout(() => setLearnedNotice(null), 4000);
+        setCorrectionTarget(null);
+        setCorrectionInput("");
+      }
+    } catch (e: any) {
+      console.error("Correction failed:", e);
+    } finally {
+      setIsSubmittingCorrection(false);
+    }
+  };
 
   const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend || inputVal).trim();
@@ -215,6 +265,25 @@ export const WeChatChatView: React.FC<WeChatChatViewProps> = ({
 
       if (!res.ok || !data.success) {
         throw new Error(data.error || "电子男友暂时走神了");
+      }
+
+      // If backend detected an organic correction from girlfriend
+      if (data.learnedCorrection && onUpdatePersona) {
+        const autoCor: PersonaCorrection = {
+          id: `cor-auto-${Date.now()}`,
+          timestamp: new Date().toISOString().replace("T", " ").slice(0, 16),
+          scenario: data.learnedCorrection.scenario || "对话互动中",
+          wrongBehavior: data.learnedCorrection.wrongBehavior || "言行不够贴合",
+          rightBehavior: data.learnedCorrection.rightBehavior || "按可人习惯调整",
+          appliedTo: "persona",
+        };
+        const updated = {
+          ...persona,
+          corrections: [autoCor, ...(persona.corrections || [])],
+        };
+        onUpdatePersona(updated);
+        setLearnedNotice(`⚡ 阿峻已把你的提醒记下：【${autoCor.scenario}】${autoCor.rightBehavior}`);
+        setTimeout(() => setLearnedNotice(null), 4500);
       }
 
       const replies: string[] = data.replies && data.replies.length > 0 ? data.replies : ["宝贝抱抱，刚没看手机！我来啦~"];
@@ -440,6 +509,16 @@ export const WeChatChatView: React.FC<WeChatChatViewProps> = ({
 
       {/* Chat Messages Stream */}
       <main className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Learned Correction Notice */}
+        {learnedNotice && (
+          <div className="sticky top-2 z-20 flex justify-center animate-fade-in">
+            <span className="bg-purple-900/90 text-white text-[11px] px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5 backdrop-blur-xs">
+              <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+              {learnedNotice}
+            </span>
+          </div>
+        )}
+
         {/* Date pill */}
         <div className="flex justify-center">
           <span className="bg-[#dadada] text-neutral-600 text-[10px] px-2 py-0.5 rounded-md">
@@ -491,17 +570,31 @@ export const WeChatChatView: React.FC<WeChatChatViewProps> = ({
                     {msg.text}
                   </div>
 
-                  {/* Simulated audio voice play trigger if available */}
+                  {/* Simulated audio voice play trigger & ex-skill Correction button */}
                   {!isMe && (
-                    <button
-                      onClick={() => playSimulatedVoice(msg.id)}
-                      className="mt-1 inline-flex items-center gap-1 text-[11px] text-emerald-700 bg-emerald-50/80 hover:bg-emerald-100/90 px-2 py-0.5 rounded-full border border-emerald-200/60 transition-colors"
-                    >
-                      <Volume2 className={`w-3 h-3 ${activeVoicePlaying === msg.id ? "animate-bounce text-emerald-600" : ""}`} />
-                      <span>
-                        {activeVoicePlaying === msg.id ? "正在播放语音..." : "语音条 4\""}
-                      </span>
-                    </button>
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <button
+                        onClick={() => playSimulatedVoice(msg.id)}
+                        className="inline-flex items-center gap-1 text-[11px] text-emerald-700 bg-emerald-50/80 hover:bg-emerald-100/90 px-2 py-0.5 rounded-full border border-emerald-200/60 transition-colors"
+                      >
+                        <Volume2 className={`w-3 h-3 ${activeVoicePlaying === msg.id ? "animate-bounce text-emerald-600" : ""}`} />
+                        <span>
+                          {activeVoicePlaying === msg.id ? "正在播放语音..." : "语音条 4\""}
+                        </span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setCorrectionTarget({ id: msg.id, text: msg.text });
+                          setCorrectionInput("");
+                        }}
+                        title="告诉阿峻平时应该怎么说（ex-skill 纠偏调教）"
+                        className="inline-flex items-center gap-1 text-[10px] text-purple-700 bg-purple-50/90 hover:bg-purple-100 px-2 py-0.5 rounded-full border border-purple-200/70 transition-colors"
+                      >
+                        <Wand2 className="w-2.5 h-2.5 text-purple-600" />
+                        <span>纠偏</span>
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -707,6 +800,63 @@ export const WeChatChatView: React.FC<WeChatChatViewProps> = ({
           </div>
         )}
       </footer>
+
+      {/* ex-skill Correction Modal */}
+      {correctionTarget && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-4 shadow-2xl space-y-3 animate-fade-in border border-purple-100">
+            <div className="flex items-center justify-between border-b border-neutral-100 pb-2">
+              <div className="flex items-center gap-1.5 font-bold text-purple-900 text-xs">
+                <Wand2 className="w-4 h-4 text-purple-600" />
+                纠偏调教 (ex-skill 动态进化)
+              </div>
+              <button
+                onClick={() => setCorrectionTarget(null)}
+                className="text-neutral-400 hover:text-neutral-700 p-1"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="bg-neutral-50 rounded-lg p-2.5 border border-neutral-200/80 text-[11px] text-neutral-600 space-y-1">
+              <span className="text-[10px] text-neutral-400 font-bold block">阿峻刚才这句回复不够地道：</span>
+              <p className="italic text-neutral-800 line-through">“{correctionTarget.text}”</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-neutral-800 block">
+                告诉{persona.boyfriendName || "阿峻"}平时应该怎么说或怎么做：
+              </label>
+              <textarea
+                rows={3}
+                placeholder="例如：阿峻才不会说多喝热水呢，你应该说晚上带我去吃潮汕牛肉火锅，多点我爱的吊龙和炸腐竹！"
+                value={correctionInput}
+                onChange={(e) => setCorrectionInput(e.target.value)}
+                className="w-full p-2.5 bg-neutral-50 border border-neutral-300 rounded-xl text-xs focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 outline-hidden leading-relaxed"
+              />
+              <p className="text-[10px] text-neutral-400">
+                💡 提交后将作为最高优先级规则写入 Prompt，阿峻会立即服软道歉并永久记住！
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                onClick={() => setCorrectionTarget(null)}
+                className="flex-1 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-medium rounded-xl text-xs transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleSubmitCorrection}
+                disabled={isSubmittingCorrection || !correctionInput.trim()}
+                className="flex-1 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-xs transition-colors"
+              >
+                {isSubmittingCorrection ? "正在写入行为法则..." : "确定纠偏"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

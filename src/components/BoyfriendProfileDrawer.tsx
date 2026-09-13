@@ -12,8 +12,17 @@ import {
   MessageSquare,
   Check,
   RefreshCw,
+  Layers,
+  BrainCircuit,
+  Wand2,
+  ShieldAlert,
+  Coffee,
+  Calendar,
+  History,
+  Send,
+  HelpCircle,
 } from "lucide-react";
-import { BoyfriendPersona, ChatSettings } from "../types";
+import { BoyfriendPersona, ChatSettings, PersonaCorrection } from "../types";
 
 interface BoyfriendProfileDrawerProps {
   isOpen: boolean;
@@ -34,12 +43,28 @@ export const BoyfriendProfileDrawer: React.FC<BoyfriendProfileDrawerProps> = ({
   onUpdateSettings,
   onReimport,
 }) => {
-  const [activeTab, setActiveTab] = useState<"persona" | "settings">("persona");
+  const [activeTab, setActiveTab] = useState<"layers" | "memories" | "corrections" | "evolution" | "settings">("layers");
   const [editedPersona, setEditedPersona] = useState<BoyfriendPersona>(persona);
+
+  // Quick inputs
   const [newPetName, setNewPetName] = useState("");
   const [newPetNameToHim, setNewPetNameToHim] = useState("");
-  const [newMemory, setNewMemory] = useState("");
-  const [newCatchphrase, setNewCatchphrase] = useState("");
+  const [newCoreRule, setNewCoreRule] = useState("");
+  const [newFoodPref, setNewFoodPref] = useState("");
+  const [newDrinkPref, setNewDrinkPref] = useState("");
+  const [newHabit, setNewHabit] = useState("");
+  const [newInsideJoke, setNewInsideJoke] = useState("");
+
+  // Correction input
+  const [corScenario, setCorScenario] = useState("");
+  const [corWrong, setCorWrong] = useState("");
+  const [corRight, setCorRight] = useState("");
+
+  // Incremental append state
+  const [appendChatText, setAppendChatText] = useState("");
+  const [isAppending, setIsAppending] = useState(false);
+  const [appendNotice, setAppendNotice] = useState<string | null>(null);
+
   const [showSavedToast, setShowSavedToast] = useState(false);
 
   React.useEffect(() => {
@@ -54,64 +79,67 @@ export const BoyfriendProfileDrawer: React.FC<BoyfriendProfileDrawerProps> = ({
     setTimeout(() => setShowSavedToast(false), 1800);
   };
 
-  const handleAddPetName = () => {
-    if (!newPetName.trim()) return;
-    setEditedPersona({
+  // Correction handling
+  const handleAddCorrection = () => {
+    if (!corRight.trim()) return;
+    const newCor: PersonaCorrection = {
+      id: `cor-${Date.now()}`,
+      timestamp: new Date().toISOString().replace("T", " ").slice(0, 16),
+      scenario: corScenario.trim() || "日常相处场景",
+      wrongBehavior: corWrong.trim() || "不够体贴或说话套路化",
+      rightBehavior: corRight.trim(),
+      appliedTo: "persona",
+    };
+    const updated = {
       ...editedPersona,
-      petNamesToHer: [...(editedPersona.petNamesToHer || []), newPetName.trim()],
-    });
-    setNewPetName("");
+      corrections: [newCor, ...(editedPersona.corrections || [])],
+    };
+    setEditedPersona(updated);
+    onUpdatePersona(updated);
+    setCorScenario("");
+    setCorWrong("");
+    setCorRight("");
+    setShowSavedToast(true);
+    setTimeout(() => setShowSavedToast(false), 1800);
   };
 
-  const handleRemovePetName = (index: number) => {
-    const updated = [...editedPersona.petNamesToHer];
-    updated.splice(index, 1);
-    setEditedPersona({ ...editedPersona, petNamesToHer: updated });
-  };
-
-  const handleAddPetNameToHim = () => {
-    if (!newPetNameToHim.trim()) return;
-    setEditedPersona({
+  const handleRemoveCorrection = (id: string) => {
+    const updated = {
       ...editedPersona,
-      petNamesToHim: [...(editedPersona.petNamesToHim || []), newPetNameToHim.trim()],
-    });
-    setNewPetNameToHim("");
+      corrections: (editedPersona.corrections || []).filter((c) => c.id !== id),
+    };
+    setEditedPersona(updated);
+    onUpdatePersona(updated);
   };
 
-  const handleRemovePetNameToHim = (index: number) => {
-    const updated = [...(editedPersona.petNamesToHim || [])];
-    updated.splice(index, 1);
-    setEditedPersona({ ...editedPersona, petNamesToHim: updated });
-  };
-
-  const handleAddMemory = () => {
-    if (!newMemory.trim()) return;
-    setEditedPersona({
-      ...editedPersona,
-      memoriesAndTopics: [...(editedPersona.memoriesAndTopics || []), newMemory.trim()],
-    });
-    setNewMemory("");
-  };
-
-  const handleRemoveMemory = (index: number) => {
-    const updated = [...editedPersona.memoriesAndTopics];
-    updated.splice(index, 1);
-    setEditedPersona({ ...editedPersona, memoriesAndTopics: updated });
-  };
-
-  const handleAddCatchphrase = () => {
-    if (!newCatchphrase.trim()) return;
-    setEditedPersona({
-      ...editedPersona,
-      catchphrases: [...(editedPersona.catchphrases || []), newCatchphrase.trim()],
-    });
-    setNewCatchphrase("");
-  };
-
-  const handleRemoveCatchphrase = (index: number) => {
-    const updated = [...editedPersona.catchphrases];
-    updated.splice(index, 1);
-    setEditedPersona({ ...editedPersona, catchphrases: updated });
+  // Incremental evolution call
+  const handleRunAppendChat = async () => {
+    if (!appendChatText.trim() || appendChatText.length < 5) return;
+    setIsAppending(true);
+    setAppendNotice(null);
+    try {
+      const res = await fetch("/api/append-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          persona: editedPersona,
+          newRawChat: appendChatText,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.persona) {
+        setEditedPersona(data.persona);
+        onUpdatePersona(data.persona);
+        setAppendChatText("");
+        setAppendNotice(`✨ 进化成功！${data.summary || "已增量吸收最新生活记忆"}，版本升级至 ${data.persona.version || "v1.1"}`);
+      } else {
+        setAppendNotice(data.error || "增量提取失败，请重试");
+      }
+    } catch (e: any) {
+      setAppendNotice(e.message || "请求超时");
+    } finally {
+      setIsAppending(false);
+    }
   };
 
   return (
@@ -123,23 +151,23 @@ export const BoyfriendProfileDrawer: React.FC<BoyfriendProfileDrawerProps> = ({
       />
 
       {/* Drawer */}
-      <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-white shadow-2xl flex flex-col">
+      <div className="absolute inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10">
+        <div className="w-screen max-w-xl bg-white shadow-2xl flex flex-col">
           {/* Top Header */}
           <div className="p-4 border-b border-neutral-200 flex items-center justify-between bg-neutral-50/80">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-sm shadow-xs">
-                {editedPersona.boyfriendName.slice(0, 1) || "男"}
+                {editedPersona.boyfriendName.slice(0, 1) || "阿"}
               </div>
               <div>
                 <h2 className="text-sm font-bold text-neutral-900 flex items-center gap-1.5">
-                  {editedPersona.boyfriendName} 的电子分身设定
-                  <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-medium">
-                    已激活
+                  {editedPersona.boyfriendName} 的 ex-skill 数字分身
+                  <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold">
+                    {editedPersona.version || "v1.0"}
                   </span>
                 </h2>
                 <p className="text-[11px] text-neutral-500">
-                  女朋友称呼：{editedPersona.girlfriendName}
+                  女朋友：{editedPersona.girlfriendName}（常唤【{editedPersona.petNamesToHer?.[0] || "可人"}】）
                 </p>
               </div>
             </div>
@@ -152,297 +180,674 @@ export const BoyfriendProfileDrawer: React.FC<BoyfriendProfileDrawerProps> = ({
             </button>
           </div>
 
-          {/* Sub Navigation */}
-          <div className="flex border-b border-neutral-200 bg-white px-4">
+          {/* Sub Navigation with 5 ex-skill tabs */}
+          <div className="flex border-b border-neutral-200 bg-white px-3 overflow-x-auto scrollbar-none">
             <button
-              id="profile-tab-persona-btn"
-              onClick={() => setActiveTab("persona")}
-              className={`py-2.5 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 ${
-                activeTab === "persona"
+              id="tab-layers-btn"
+              onClick={() => setActiveTab("layers")}
+              className={`py-2.5 px-2.5 text-xs font-semibold border-b-2 flex items-center gap-1.5 shrink-0 ${
+                activeTab === "layers"
+                  ? "border-emerald-600 text-emerald-600"
+                  : "border-transparent text-neutral-500 hover:text-neutral-800"
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              五层人格 (5-Layers)
+            </button>
+            <button
+              id="tab-memories-btn"
+              onClick={() => setActiveTab("memories")}
+              className={`py-2.5 px-2.5 text-xs font-semibold border-b-2 flex items-center gap-1.5 shrink-0 ${
+                activeTab === "memories"
                   ? "border-emerald-600 text-emerald-600"
                   : "border-transparent text-neutral-500 hover:text-neutral-800"
               }`}
             >
               <Heart className="w-3.5 h-3.5" />
-              性格与恋爱记忆
+              共同记忆库 (Memories)
             </button>
             <button
-              id="profile-tab-settings-btn"
+              id="tab-corrections-btn"
+              onClick={() => setActiveTab("corrections")}
+              className={`py-2.5 px-2.5 text-xs font-semibold border-b-2 flex items-center gap-1.5 shrink-0 ${
+                activeTab === "corrections"
+                  ? "border-emerald-600 text-emerald-600"
+                  : "border-transparent text-neutral-500 hover:text-neutral-800"
+              }`}
+            >
+              <Wand2 className="w-3.5 h-3.5" />
+              动态纠偏 (Corrections)
+              {(editedPersona.corrections?.length || 0) > 0 && (
+                <span className="bg-pink-100 text-pink-700 text-[10px] px-1 rounded-full font-bold">
+                  {editedPersona.corrections?.length}
+                </span>
+              )}
+            </button>
+            <button
+              id="tab-evolution-btn"
+              onClick={() => setActiveTab("evolution")}
+              className={`py-2.5 px-2.5 text-xs font-semibold border-b-2 flex items-center gap-1.5 shrink-0 ${
+                activeTab === "evolution"
+                  ? "border-emerald-600 text-emerald-600"
+                  : "border-transparent text-neutral-500 hover:text-neutral-800"
+              }`}
+            >
+              <BrainCircuit className="w-3.5 h-3.5" />
+              增量进化 (Merger)
+            </button>
+            <button
+              id="tab-settings-btn"
               onClick={() => setActiveTab("settings")}
-              className={`py-2.5 px-3 text-xs font-semibold border-b-2 flex items-center gap-1.5 ${
+              className={`py-2.5 px-2.5 text-xs font-semibold border-b-2 flex items-center gap-1.5 shrink-0 ${
                 activeTab === "settings"
                   ? "border-emerald-600 text-emerald-600"
                   : "border-transparent text-neutral-500 hover:text-neutral-800"
               }`}
             >
               <Sliders className="w-3.5 h-3.5" />
-              聊天体验与参数微调
+              体验设置
             </button>
           </div>
 
-          {/* Content Area */}
+          {/* Tab Content */}
           <div className="flex-1 overflow-y-auto p-4 space-y-5 text-xs text-neutral-700">
-            {activeTab === "persona" ? (
-              <>
-                {/* Intro summary card */}
+            {/* TAB 1: 5-LAYERS */}
+            {activeTab === "layers" && (
+              <div className="space-y-4">
+                {/* Architecture banner */}
                 <div className="bg-emerald-50/70 border border-emerald-100 rounded-xl p-3.5">
                   <div className="flex items-center gap-1.5 text-emerald-800 font-bold mb-1">
                     <Sparkles className="w-3.5 h-3.5" />
-                    分身自述 (AI根据聊天分析生成)
+                    ex-skill 五层人格模型 (Layer 0 ~ Layer 5)
                   </div>
-                  <p className="text-neutral-600 leading-relaxed italic">
-                    "{editedPersona.summaryIntro}"
+                  <p className="text-neutral-600 leading-relaxed text-[11px]">
+                    根据 perkfly/ex-skill 架构，人格由底层的“行为铁律”贯穿至“表达习惯与边界”，保证男友回复既有灵魂细节，又绝对符合真人习惯。
                   </p>
                 </div>
 
-                {/* Names */}
-                <div className="space-y-2">
+                {/* Layer 0: Core Rules */}
+                <div className="bg-amber-50/50 border border-amber-200/80 rounded-xl p-3.5 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <label className="font-bold text-neutral-800 block">基础姓名与身份</label>
-                    <span className="text-[11px] text-neutral-400">已设定为张溯峻(阿峻/周周)</span>
+                    <div className="font-bold text-amber-900 flex items-center gap-1.5 text-xs">
+                      <ShieldAlert className="w-4 h-4 text-amber-600" />
+                      Layer 0: 核心性格铁律（最高优先级条件-行为）
+                    </div>
+                    <span className="text-[10px] text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded font-medium">
+                      不可违背
+                    </span>
                   </div>
+
+                  <div className="space-y-1.5">
+                    {(editedPersona.layers?.layer0_coreRules || [
+                      "当女友倾诉工作累或难过时，坚决用行动与拥抱解决，绝不说教或只说多喝热水",
+                      "当女友亲昵称呼'阿峻'或'周周'时，必须有极度强烈的安全感与甜蜜归属感回应",
+                      "绝不冷战，任何小摩擦必须在当天主动先哄好可人",
+                    ]).map((rule, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-start justify-between gap-2 p-2 bg-white rounded-lg border border-amber-200/60 text-[11px] text-neutral-800"
+                      >
+                        <span className="flex-1">⚡ {rule}</span>
+                        <button
+                          onClick={() => {
+                            const cur = [...(editedPersona.layers?.layer0_coreRules || [])];
+                            cur.splice(idx, 1);
+                            setEditedPersona({
+                              ...editedPersona,
+                              layers: { ...(editedPersona.layers || {}), layer0_coreRules: cur },
+                            });
+                          }}
+                          className="text-neutral-400 hover:text-red-500"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-1.5 pt-1">
+                    <input
+                      type="text"
+                      placeholder="新增一条核心铁律（如：可人生病时坚决点好外卖和温水）..."
+                      value={newCoreRule}
+                      onChange={(e) => setNewCoreRule(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && newCoreRule.trim()) {
+                          const cur = [...(editedPersona.layers?.layer0_coreRules || [])];
+                          cur.push(newCoreRule.trim());
+                          setEditedPersona({
+                            ...editedPersona,
+                            layers: { ...(editedPersona.layers || {}), layer0_coreRules: cur },
+                          });
+                          setNewCoreRule("");
+                        }
+                      }}
+                      className="flex-1 px-2.5 py-1.5 bg-white border border-neutral-300 rounded-lg text-xs"
+                    />
+                    <button
+                      onClick={() => {
+                        if (!newCoreRule.trim()) return;
+                        const cur = [...(editedPersona.layers?.layer0_coreRules || [])];
+                        cur.push(newCoreRule.trim());
+                        setEditedPersona({
+                          ...editedPersona,
+                          layers: { ...(editedPersona.layers || {}), layer0_coreRules: cur },
+                        });
+                        setNewCoreRule("");
+                      }}
+                      className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium text-xs shrink-0"
+                    >
+                      添加
+                    </button>
+                  </div>
+                </div>
+
+                {/* Layer 1: Identity */}
+                <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-3.5 space-y-2.5">
+                  <span className="font-bold text-neutral-800 block text-xs">
+                    Layer 1: 身份锚定 (Identity)
+                  </span>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <span className="text-[11px] text-neutral-500 block mb-1">女友常叫名称 (如: 阿峻)</span>
+                      <span className="text-[11px] text-neutral-500 block mb-1">女友叫他</span>
                       <input
                         type="text"
                         value={editedPersona.boyfriendName}
-                        onChange={(e) =>
-                          setEditedPersona({ ...editedPersona, boyfriendName: e.target.value })
-                        }
-                        placeholder="如：阿峻"
-                        className="w-full px-2.5 py-1.5 bg-neutral-50 border border-neutral-200 rounded-lg text-xs"
+                        onChange={(e) => setEditedPersona({ ...editedPersona, boyfriendName: e.target.value })}
+                        className="w-full px-2.5 py-1.5 bg-white border border-neutral-200 rounded-lg text-xs"
                       />
                     </div>
                     <div>
-                      <span className="text-[11px] text-neutral-500 block mb-1">男友本名 (如: 张溯峻)</span>
+                      <span className="text-[11px] text-neutral-500 block mb-1">男友本名</span>
                       <input
                         type="text"
                         value={editedPersona.realName || ""}
-                        onChange={(e) =>
-                          setEditedPersona({ ...editedPersona, realName: e.target.value })
-                        }
-                        placeholder="如：张溯峻"
-                        className="w-full px-2.5 py-1.5 bg-neutral-50 border border-neutral-200 rounded-lg text-xs"
+                        onChange={(e) => setEditedPersona({ ...editedPersona, realName: e.target.value })}
+                        className="w-full px-2.5 py-1.5 bg-white border border-neutral-200 rounded-lg text-xs"
                       />
                     </div>
                     <div>
-                      <span className="text-[11px] text-neutral-500 block mb-1">男友小名 (如: 周周)</span>
+                      <span className="text-[11px] text-neutral-500 block mb-1">男友小名</span>
                       <input
                         type="text"
                         value={editedPersona.nickname || ""}
-                        onChange={(e) =>
-                          setEditedPersona({ ...editedPersona, nickname: e.target.value })
-                        }
-                        placeholder="如：周周"
-                        className="w-full px-2.5 py-1.5 bg-neutral-50 border border-neutral-200 rounded-lg text-xs"
+                        onChange={(e) => setEditedPersona({ ...editedPersona, nickname: e.target.value })}
+                        className="w-full px-2.5 py-1.5 bg-white border border-neutral-200 rounded-lg text-xs"
                       />
                     </div>
                     <div>
-                      <span className="text-[11px] text-neutral-500 block mb-1">女友真实姓名 (如: 尚可人)</span>
+                      <span className="text-[11px] text-neutral-500 block mb-1">女友姓名</span>
                       <input
                         type="text"
                         value={editedPersona.girlfriendName}
-                        onChange={(e) =>
-                          setEditedPersona({ ...editedPersona, girlfriendName: e.target.value })
-                        }
-                        placeholder="如：尚可人"
-                        className="w-full px-2.5 py-1.5 bg-neutral-50 border border-neutral-200 rounded-lg text-xs"
+                        onChange={(e) => setEditedPersona({ ...editedPersona, girlfriendName: e.target.value })}
+                        className="w-full px-2.5 py-1.5 bg-white border border-neutral-200 rounded-lg text-xs"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Pet names to him (What she calls him) */}
-                <div className="space-y-2">
+                {/* Layer 2: Expression & Scenario Examples */}
+                <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-3.5 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <label className="font-bold text-neutral-800">女友对男友的称呼</label>
-                    <span className="text-[11px] text-neutral-400">听到这些称呼自然应答</span>
+                    <span className="font-bold text-neutral-800 block text-xs">
+                      Layer 2: 表达风格与真实情境例句 (Scenario Examples)
+                    </span>
+                    <span className="text-[10px] text-neutral-400">杜绝AI机器人味</span>
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {(editedPersona.petNamesToHim || ["阿峻", "周周", "张溯峻", "峻峻", "老公"]).map((pet, idx) => (
-                      <span
-                        key={idx}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-medium"
-                      >
-                        {pet}
+
+                  {editedPersona.layers?.layer2_expression?.scenarioExamples ? (
+                    <div className="space-y-2">
+                      {Object.entries(editedPersona.layers.layer2_expression.scenarioExamples).map(([key, val]) => (
+                        <div key={key} className="bg-white p-2.5 rounded-lg border border-neutral-200 space-y-1">
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                            {key === "askDaily" && "日常过得如何"}
+                            {key === "sayMissYou" && "被说想你了"}
+                            {key === "longTimeNoReply" && "没及时回消息"}
+                            {key === "hearGoodNews" && "听到女友开心事"}
+                            {key === "irritatedOrAngry" && "惹可人生气时"}
+                            {key === "askWhatToEat" && "被问吃什么"}
+                            {!["askDaily", "sayMissYou", "longTimeNoReply", "hearGoodNews", "irritatedOrAngry", "askWhatToEat"].includes(key) && key}
+                          </span>
+                          <p className="text-[11px] text-neutral-700 italic">“{val}”</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-neutral-400 italic">
+                      当前使用的是系统预设的高拟真微信语料句库。
+                    </p>
+                  )}
+                </div>
+
+                {/* Layer 3: Emotional Logic */}
+                <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-3.5 space-y-2">
+                  <span className="font-bold text-neutral-800 block text-xs">
+                    Layer 3: 情感逻辑 (何时示爱 / 面对质疑时)
+                  </span>
+                  <div className="space-y-1.5 text-[11px]">
+                    <div className="p-2 bg-white rounded-lg border border-neutral-200">
+                      <span className="font-bold text-neutral-600 block mb-0.5">面对可人质疑或撒娇查岗：</span>
+                      <span>{editedPersona.layers?.layer3_emotionalLogic?.howFaceDoubts || "大大方方拍照报备，给足100%安全感，主动逗她开心"}</span>
+                    </div>
+                    <div className="p-2 bg-white rounded-lg border border-neutral-200">
+                      <span className="font-bold text-neutral-600 block mb-0.5">表达爱意方式：</span>
+                      <span>{editedPersona.layers?.layer3_emotionalLogic?.whenExpressLove || "行动派为主，随时微信秒回，下班接送，买好吃的"}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Layer 5: Boundaries */}
+                <div className="bg-red-50/40 border border-red-200/60 rounded-xl p-3.5 space-y-1.5">
+                  <span className="font-bold text-red-900 block text-xs">
+                    Layer 5: 行为底线与雷区
+                  </span>
+                  <p className="text-[11px] text-red-800">
+                    - 绝不对可人说教或居高临下；
+                    - 绝不冷落或隔夜冷战；
+                    - 绝不与任何异性暧昧，边界感分明。
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: MEMORIES */}
+            {activeTab === "memories" && (
+              <div className="space-y-4">
+                <div className="bg-pink-50/70 border border-pink-200/70 rounded-xl p-3.5">
+                  <div className="flex items-center gap-1.5 text-pink-900 font-bold mb-1">
+                    <Heart className="w-3.5 h-3.5 text-pink-600 fill-pink-600" />
+                    ex-skill Part A: 共同记忆库 (Memories)
+                  </div>
+                  <p className="text-neutral-600 leading-relaxed text-[11px]">
+                    包含恋爱故事、日常习惯、爱吃爱喝的偏好细节与只有两人懂的专属暗号。大模型在对话时会自动检索这些记忆，聊起来充满真实的默契。
+                  </p>
+                </div>
+
+                {/* Relationship overview */}
+                <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-3.5 space-y-1.5">
+                  <label className="font-bold text-neutral-800 block text-xs">爱情故事概览</label>
+                  <textarea
+                    rows={2}
+                    value={editedPersona.memories?.relationshipOverview || "阿峻和可人相识相伴，阿峻细心体贴，把可人捧在手心里疼爱"}
+                    onChange={(e) =>
+                      setEditedPersona({
+                        ...editedPersona,
+                        memories: {
+                          ...(editedPersona.memories || {}),
+                          relationshipOverview: e.target.value,
+                        },
+                      })
+                    }
+                    className="w-full px-2.5 py-1.5 bg-white border border-neutral-300 rounded-lg text-xs leading-relaxed"
+                  />
+                </div>
+
+                {/* Food Preferences */}
+                <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-3.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-neutral-800 flex items-center gap-1.5 text-xs">
+                      <Coffee className="w-3.5 h-3.5 text-amber-600" />
+                      饮食与饮品偏好细节
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div>
+                      <span className="text-[11px] text-neutral-500 block mb-1">爱吃的美食：</span>
+                      <div className="flex flex-wrap gap-1.5 mb-1.5">
+                        {(editedPersona.memories?.preferences?.food || ["潮汕牛肉火锅（必点吊龙、匙柄、炸腐竹）", "烤肉", "热腾腾的汤粉"]).map((food, i) => (
+                          <span key={i} className="inline-flex items-center gap-1 bg-white border border-neutral-200 text-neutral-700 px-2 py-0.5 rounded-md text-[11px]">
+                            {food}
+                            <button
+                              onClick={() => {
+                                const cur = [...(editedPersona.memories?.preferences?.food || [])];
+                                cur.splice(i, 1);
+                                setEditedPersona({
+                                  ...editedPersona,
+                                  memories: {
+                                    ...(editedPersona.memories || {}),
+                                    preferences: { ...(editedPersona.memories?.preferences || { drinks: [], habits: [] }), food: cur },
+                                  },
+                                });
+                              }}
+                              className="text-neutral-400 hover:text-red-500"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex gap-1.5">
+                        <input
+                          type="text"
+                          placeholder="添加爱吃的美食..."
+                          value={newFoodPref}
+                          onChange={(e) => setNewFoodPref(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && newFoodPref.trim()) {
+                              const cur = [...(editedPersona.memories?.preferences?.food || [])];
+                              cur.push(newFoodPref.trim());
+                              setEditedPersona({
+                                ...editedPersona,
+                                memories: {
+                                  ...(editedPersona.memories || {}),
+                                  preferences: { ...(editedPersona.memories?.preferences || { drinks: [], habits: [] }), food: cur },
+                                },
+                              });
+                              setNewFoodPref("");
+                            }
+                          }}
+                          className="flex-1 px-2 py-1 bg-white border border-neutral-300 rounded text-xs"
+                        />
                         <button
-                          type="button"
-                          onClick={() => handleRemovePetNameToHim(idx)}
-                          className="hover:text-emerald-950 font-bold"
+                          onClick={() => {
+                            if (!newFoodPref.trim()) return;
+                            const cur = [...(editedPersona.memories?.preferences?.food || [])];
+                            cur.push(newFoodPref.trim());
+                            setEditedPersona({
+                              ...editedPersona,
+                              memories: {
+                                ...(editedPersona.memories || {}),
+                                preferences: { ...(editedPersona.memories?.preferences || { drinks: [], habits: [] }), food: cur },
+                              },
+                            });
+                            setNewFoodPref("");
+                          }}
+                          className="px-2.5 py-1 bg-neutral-200 hover:bg-neutral-300 rounded text-xs"
                         >
-                          ×
+                          加美食
                         </button>
-                      </span>
-                    ))}
-                  </div>
-                  <div className="flex gap-1.5 pt-1">
-                    <input
-                      type="text"
-                      value={newPetNameToHim}
-                      onChange={(e) => setNewPetNameToHim(e.target.value)}
-                      placeholder="添加她对你的叫法，如：峻哥"
-                      onKeyDown={(e) => e.key === "Enter" && handleAddPetNameToHim()}
-                      className="flex-1 px-2.5 py-1.5 bg-neutral-50 border border-neutral-200 rounded-lg text-xs"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddPetNameToHim}
-                      className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-lg text-xs font-medium flex items-center gap-1"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> 添加
-                    </button>
-                  </div>
-                </div>
+                      </div>
+                    </div>
 
-                {/* Pet names to her */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="font-bold text-neutral-800">对她的专属昵称</label>
-                    <span className="text-[11px] text-neutral-400">回复时会随机亲昵称呼</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {editedPersona.petNamesToHer.map((pet, idx) => (
-                      <span
-                        key={idx}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-pink-50 text-pink-700 border border-pink-100 text-xs font-medium"
-                      >
-                        {pet}
+                    <div>
+                      <span className="text-[11px] text-neutral-500 block mb-1">奶茶饮品与生活细节：</span>
+                      <div className="flex flex-wrap gap-1.5 mb-1.5">
+                        {(editedPersona.memories?.preferences?.drinks || ["奶茶喜欢半糖温热", "生理期不能喝冰"]).map((drink, i) => (
+                          <span key={i} className="inline-flex items-center gap-1 bg-white border border-neutral-200 text-neutral-700 px-2 py-0.5 rounded-md text-[11px]">
+                            {drink}
+                            <button
+                              onClick={() => {
+                                const cur = [...(editedPersona.memories?.preferences?.drinks || [])];
+                                cur.splice(i, 1);
+                                setEditedPersona({
+                                  ...editedPersona,
+                                  memories: {
+                                    ...(editedPersona.memories || {}),
+                                    preferences: { ...(editedPersona.memories?.preferences || { food: [], habits: [] }), drinks: cur },
+                                  },
+                                });
+                              }}
+                              className="text-neutral-400 hover:text-red-500"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex gap-1.5">
+                        <input
+                          type="text"
+                          placeholder="添加饮品习惯（如：半糖少冰、温开水）..."
+                          value={newDrinkPref}
+                          onChange={(e) => setNewDrinkPref(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && newDrinkPref.trim()) {
+                              const cur = [...(editedPersona.memories?.preferences?.drinks || [])];
+                              cur.push(newDrinkPref.trim());
+                              setEditedPersona({
+                                ...editedPersona,
+                                memories: {
+                                  ...(editedPersona.memories || {}),
+                                  preferences: { ...(editedPersona.memories?.preferences || { food: [], habits: [] }), drinks: cur },
+                                },
+                              });
+                              setNewDrinkPref("");
+                            }
+                          }}
+                          className="flex-1 px-2 py-1 bg-white border border-neutral-300 rounded text-xs"
+                        />
                         <button
-                          type="button"
-                          onClick={() => handleRemovePetName(idx)}
-                          className="hover:text-pink-900"
+                          onClick={() => {
+                            if (!newDrinkPref.trim()) return;
+                            const cur = [...(editedPersona.memories?.preferences?.drinks || [])];
+                            cur.push(newDrinkPref.trim());
+                            setEditedPersona({
+                              ...editedPersona,
+                              memories: {
+                                ...(editedPersona.memories || {}),
+                                preferences: { ...(editedPersona.memories?.preferences || { food: [], habits: [] }), drinks: cur },
+                              },
+                            });
+                            setNewDrinkPref("");
+                          }}
+                          className="px-2.5 py-1 bg-neutral-200 hover:bg-neutral-300 rounded text-xs"
                         >
-                          ×
+                          加习惯
                         </button>
-                      </span>
-                    ))}
-                  </div>
-                  <div className="flex gap-1.5 pt-1">
-                    <input
-                      type="text"
-                      value={newPetName}
-                      onChange={(e) => setNewPetName(e.target.value)}
-                      placeholder="添加专属爱称，如：笨蛋宝"
-                      onKeyDown={(e) => e.key === "Enter" && handleAddPetName()}
-                      className="flex-1 px-2.5 py-1.5 bg-neutral-50 border border-neutral-200 rounded-lg text-xs"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddPetName}
-                      className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-lg text-xs font-medium flex items-center gap-1"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> 添加
-                    </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Personality traits */}
-                <div className="space-y-1.5">
-                  <label className="font-bold text-neutral-800 block">性格特征标签</label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {editedPersona.personalityTraits.map((trait, idx) => (
-                      <span
-                        key={idx}
-                        className="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-100 text-xs font-medium"
-                      >
-                        #{trait}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Catchphrases */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="font-bold text-neutral-800">常说口头禅与高频口癖</label>
-                    <span className="text-[11px] text-neutral-400">还原打字习惯</span>
-                  </div>
-                  <div className="space-y-1">
-                    {editedPersona.catchphrases.map((phrase, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between bg-neutral-50 px-2.5 py-1.5 rounded-lg border border-neutral-200"
-                      >
-                        <span className="text-neutral-700">“{phrase}”</span>
+                {/* Daily Rituals & Inside Jokes */}
+                <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-3.5 space-y-2">
+                  <span className="font-bold text-neutral-800 block text-xs">专属暗号与情侣梗</span>
+                  <div className="space-y-1.5">
+                    {(editedPersona.memories?.insideJokes || ["迟到罚剥虾一只", "叫'张溯峻'就是要立刻乖乖认错立正站好", "报告长官"]).map((joke, i) => (
+                      <div key={i} className="flex items-center justify-between p-2 bg-white rounded border border-neutral-200 text-[11px]">
+                        <span>🤫 {joke}</span>
                         <button
-                          type="button"
-                          onClick={() => handleRemoveCatchphrase(idx)}
+                          onClick={() => {
+                            const cur = [...(editedPersona.memories?.insideJokes || [])];
+                            cur.splice(i, 1);
+                            setEditedPersona({
+                              ...editedPersona,
+                              memories: { ...(editedPersona.memories || {}), insideJokes: cur },
+                            });
+                          }}
                           className="text-neutral-400 hover:text-red-500"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-3 h-3" />
                         </button>
                       </div>
                     ))}
                   </div>
-                  <div className="flex gap-1.5">
+
+                  <div className="flex gap-1.5 pt-1">
                     <input
                       type="text"
-                      value={newCatchphrase}
-                      onChange={(e) => setNewCatchphrase(e.target.value)}
-                      placeholder="新增口头禅，如：收到长官！"
-                      onKeyDown={(e) => e.key === "Enter" && handleAddCatchphrase()}
-                      className="flex-1 px-2.5 py-1.5 bg-neutral-50 border border-neutral-200 rounded-lg text-xs"
+                      placeholder="新增两人专属暗号..."
+                      value={newInsideJoke}
+                      onChange={(e) => setNewInsideJoke(e.target.value)}
+                      className="flex-1 px-2.5 py-1.5 bg-white border border-neutral-300 rounded-lg text-xs"
                     />
                     <button
-                      type="button"
-                      onClick={handleAddCatchphrase}
-                      className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-lg text-xs font-medium flex items-center gap-1"
+                      onClick={() => {
+                        if (!newInsideJoke.trim()) return;
+                        const cur = [...(editedPersona.memories?.insideJokes || [])];
+                        cur.push(newInsideJoke.trim());
+                        setEditedPersona({
+                          ...editedPersona,
+                          memories: { ...(editedPersona.memories || {}), insideJokes: cur },
+                        });
+                        setNewInsideJoke("");
+                      }}
+                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs"
                     >
-                      <Plus className="w-3.5 h-3.5" /> 添加
+                      添加
                     </button>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: CORRECTIONS */}
+            {activeTab === "corrections" && (
+              <div className="space-y-4">
+                <div className="bg-purple-50/70 border border-purple-200/70 rounded-xl p-3.5">
+                  <div className="flex items-center gap-1.5 text-purple-900 font-bold mb-1">
+                    <Wand2 className="w-3.5 h-3.5 text-purple-600" />
+                    ex-skill Correction 动态纠偏机制
+                  </div>
+                  <p className="text-neutral-600 leading-relaxed text-[11px]">
+                    当男友分身回复不够符合你的真实期望或说了不该说的话时，纠偏指令会作为【最高优先级规则】被写入模型 Prompt。永久生效，越聊越像！
+                  </p>
                 </div>
 
-                {/* Memories & shared topics */}
+                {/* Form to add correction */}
+                <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-3.5 space-y-2.5">
+                  <span className="font-bold text-neutral-800 block text-xs">新增纠偏指令 (调教分身)</span>
+                  <div className="space-y-2">
+                    <div>
+                      <span className="text-[11px] text-neutral-500 block mb-1">触发场景（如：被可人叫大名时 / 可人生病时）</span>
+                      <input
+                        type="text"
+                        placeholder="例如：可人说肚子疼不舒服时"
+                        value={corScenario}
+                        onChange={(e) => setCorScenario(e.target.value)}
+                        className="w-full px-2.5 py-1.5 bg-white border border-neutral-300 rounded-lg text-xs"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[11px] text-neutral-500 block mb-1">不应该做什么（错误言行）</span>
+                      <input
+                        type="text"
+                        placeholder="例如：只说'多喝热水好好休息'这类套话"
+                        value={corWrong}
+                        onChange={(e) => setCorWrong(e.target.value)}
+                        className="w-full px-2.5 py-1.5 bg-white border border-neutral-300 rounded-lg text-xs"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[11px] text-neutral-500 block mb-1">必须怎么做（正确行为，最高优执行）</span>
+                      <input
+                        type="text"
+                        placeholder="例如：立刻问要不要点红糖水和跑腿送药，并主动提出下班飞奔过来陪可人"
+                        value={corRight}
+                        onChange={(e) => setCorRight(e.target.value)}
+                        className="w-full px-2.5 py-1.5 bg-white border border-neutral-300 rounded-lg text-xs"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleAddCorrection}
+                    disabled={!corRight.trim()}
+                    className="w-full py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> 保存纠偏规则
+                  </button>
+                </div>
+
+                {/* List of corrections */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="font-bold text-neutral-800">共同恋爱记忆库</label>
-                    <span className="text-[11px] text-neutral-400">AI 会主动在对话中提起</span>
+                    <span className="font-bold text-neutral-800 text-xs">已生效纠偏条目 (按时间倒序)</span>
+                    <span className="text-[10px] text-neutral-400">
+                      共 {editedPersona.corrections?.length || 0} 条
+                    </span>
                   </div>
-                  <div className="space-y-1.5">
-                    {editedPersona.memoriesAndTopics.map((mem, idx) => (
+
+                  {(editedPersona.corrections || []).length === 0 ? (
+                    <div className="p-4 text-center text-neutral-400 border border-dashed border-neutral-200 rounded-xl">
+                      暂无纠偏记录。在聊天时点击气泡下方的“纠偏”按钮即可随时教阿峻更懂你！
+                    </div>
+                  ) : (
+                    (editedPersona.corrections || []).map((cor) => (
                       <div
-                        key={idx}
-                        className="flex items-start justify-between bg-neutral-50 p-2 rounded-lg border border-neutral-200"
+                        key={cor.id}
+                        className="p-3 bg-white rounded-xl border border-neutral-200 shadow-2xs space-y-1.5 text-[11px]"
                       >
-                        <span className="text-neutral-700 leading-relaxed text-[11px]">{mem}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveMemory(idx)}
-                          className="text-neutral-400 hover:text-red-500 shrink-0 ml-2 mt-0.5"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center justify-between text-neutral-400 text-[10px]">
+                          <span className="font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">
+                            场景: {cor.scenario}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span>{cor.timestamp}</span>
+                            <button
+                              onClick={() => handleRemoveCorrection(cor.id)}
+                              className="text-neutral-400 hover:text-red-500"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="text-red-600/90 line-through">
+                          ❌ {cor.wrongBehavior}
+                        </div>
+                        <div className="text-emerald-700 font-medium">
+                          ✅ {cor.rightBehavior}
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                  <div className="space-y-1.5 pt-1">
-                    <textarea
-                      rows={2}
-                      value={newMemory}
-                      onChange={(e) => setNewMemory(e.target.value)}
-                      placeholder="添加你们专属的回忆，如：她最爱吃哪家店、养的宠物叫什么、约好国庆一起去哪..."
-                      className="w-full px-2.5 py-1.5 bg-neutral-50 border border-neutral-200 rounded-lg text-xs"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddMemory}
-                      className="w-full py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-lg text-xs font-medium flex items-center justify-center gap-1"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> 补充恋爱记忆细节
-                    </button>
-                  </div>
+                    ))
+                  )}
                 </div>
-              </>
-            ) : (
-              /* Settings Tab */
-              <div className="space-y-6">
+              </div>
+            )}
+
+            {/* TAB 4: EVOLUTION (Incremental Merger) */}
+            {activeTab === "evolution" && (
+              <div className="space-y-4">
+                <div className="bg-blue-50/70 border border-blue-200/70 rounded-xl p-3.5">
+                  <div className="flex items-center gap-1.5 text-blue-900 font-bold mb-1">
+                    <BrainCircuit className="w-3.5 h-3.5 text-blue-600" />
+                    ex-skill Merger 增量记忆提取与进化
+                  </div>
+                  <p className="text-neutral-600 leading-relaxed text-[11px]">
+                    情侣的生活每天都在更新！无需重新训练，只需把你们这几天最新的微信聊天片段、日记或美食打卡记录粘贴在下方，系统会自动提取新的习惯、梗与纪念时刻并无缝融合！
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="font-bold text-neutral-800 block text-xs">
+                    粘贴最新微信聊天记录或生活随笔
+                  </label>
+                  <textarea
+                    rows={6}
+                    placeholder="如：
+2026/09/12 21:00
+可人：今天下班我们去吃那家新开的潮汕生腌吧！
+阿峻：收到！下班我开车去接你，记得带外套降温啦~"
+                    value={appendChatText}
+                    onChange={(e) => setAppendChatText(e.target.value)}
+                    className="w-full p-2.5 bg-neutral-50 border border-neutral-300 rounded-xl text-xs font-mono leading-relaxed"
+                  />
+                  <button
+                    onClick={handleRunAppendChat}
+                    disabled={isAppending || appendChatText.trim().length < 5}
+                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-xs"
+                  >
+                    {isAppending ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        AI正在增量蒸馏并融合最新生活细节...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        增量吸收记忆并升级分身版本
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {appendNotice && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs leading-relaxed">
+                    {appendNotice}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB 5: SETTINGS */}
+            {activeTab === "settings" && (
+              <div className="space-y-4">
                 {/* Sweetness Slider */}
                 <div className="space-y-2 bg-neutral-50 p-3.5 rounded-xl border border-neutral-200">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-neutral-800 flex items-center gap-1.5">
-                      <Heart className="w-3.5 h-3.5 text-pink-500" />
+                      <Heart className="w-3.5 h-3.5 text-pink-500 fill-pink-500" />
                       恋爱甜度模式
                     </span>
                     <span className="text-xs font-bold text-pink-600">{settings.sweetness}%</span>
@@ -513,7 +918,7 @@ export const BoyfriendProfileDrawer: React.FC<BoyfriendProfileDrawerProps> = ({
                     <div>
                       <div className="font-bold text-neutral-800">打字延迟与“正在输入”</div>
                       <div className="text-[11px] text-neutral-400">
-                        顶部显示“对方正在输入...”，等待800ms后逐条弹出消息
+                        顶部显示“对方正在输入...”，模拟真人敲键盘节奏
                       </div>
                     </div>
                     <input
@@ -555,7 +960,7 @@ export const BoyfriendProfileDrawer: React.FC<BoyfriendProfileDrawerProps> = ({
                     className="w-full py-2.5 px-4 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-medium rounded-xl flex items-center justify-center gap-2 transition-colors"
                   >
                     <RefreshCw className="w-4 h-4 text-neutral-500" />
-                    重新导入新的微信聊天记录
+                    重新导入完整的微信聊天记录
                   </button>
                 </div>
               </div>

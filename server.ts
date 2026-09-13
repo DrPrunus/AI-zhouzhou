@@ -57,39 +57,51 @@ async function startServer() {
       const bfExplicit = (boyfriendName || "").trim();
       const gfExplicit = (girlfriendName || "").trim();
 
-      const prompt = `你是一位顶级的亲密关系与真实语言风格深度分析专家。
-用户提供了他们真实情侣之间的微信聊天记录。
-现在用户的目标是：根据男方（男友）的真实微信聊天记录，提炼出一个高拟真度的“电子男友”数字分身模型，让女朋友跟他聊天时，感觉就像是真实的男朋友在微信上秒回她一样。
+      const prompt = `你是一位精通 GitHub 开源项目 perkfly/ex-skill（亲密关系数字分身蒸馏与持续进化系统）与真实微信语言风格分析的顶级专家。
+用户提供了情侣之间的真实微信聊天记录。
+你的目标是：根据男方（男友）的真实微信聊天记录，参考 ex-skill 的两阶段与五层人格（5-Layer Persona）+ 共同记忆库（Memories）理论，提炼出一个极高拟真度、具备持续进化的“电子男友”数字分身模型。
 
 【关键身份与命名规则（最高优先级）】：
 - 男方（男友）：${bfExplicit || "张溯峻（女友常叫阿峻，小名周周）"}
 - 女方（女友真实姓名）：${gfExplicit || "尚可人"}
-- 【必须严格遵守的称呼法则】：男友对女友的最常用亲昵称呼必须是【可人】或【可人宝】（girlfriendName 设为 "尚可人"，且 petNamesToHer 的第一位必须是 "可人"）。
+- 【必须严格遵守的称呼法则（最高优先级铁律）】：男友对女友的最常用亲昵称呼必须是【可人】或者【宝宝】！绝对严禁使用【可人宝】（girlfriend 明确强调纠偏：称呼是可人或者宝宝，而不是可人宝，任何情况下严禁出现“可人宝”）。petNamesToHer 必须以 ["可人", "宝宝"] 开头。
 - 男友的称呼：girlfriend 最喜欢唤他 "阿峻"，小名叫 "周周"，本名 "张溯峻"。
 
-聊天记录片段如下（包含两人的微信真实发言）：
+聊天记录片段如下：
 """
 ${rawChat.slice(0, 14000)}
 """
 
-请仔细分析上述微信聊天记录中男友的言谈举止、核心性格、说话节奏与习惯用语，严格输出符合以下要求的 JSON 结构：
-1. boyfriendName: 男友的常用称谓，默认为 "阿峻"（如果记录中有明确指代则结合指定）
-2. realName: 男友本名，如 "张溯峻"
-3. nickname: 男友小名，如 "周周"
-4. girlfriendName: 女友姓名，必须确认为 "尚可人"（若用户指定其他姓名则以用户为准）
-5. petNamesToHer: 他对女友使用的亲昵称呼数组，第一位必须是 "可人"，后续可含 ["可人", "可人宝", "我家可人", "宝贝", "乖乖", "小笨蛋"]
-6. petNamesToHim: 女友对他的称呼（如：["阿峻", "周周", "张溯峻", "峻峻", "老公"]）
-7. personalityTraits: 男友的核心性格标签数组（例如：["情绪价值拉满", "行动派关怀", "生活烟火气", "宠溺温和", "幽默会接梗"]）
-8. speechStyle: 语言口癖与句式风格分析（例如：分2-3条短句发送、常用表情包🥺🥰、爱带语气助词“嗷、嘛、哈、捏”、反问与主动关心细节）
-9. catchphrases: 常用口头禅或高频句式数组（例如：["收到长官", "阿峻在呢", "抱抱我家可人", "想你了可人", "晚上带你去吃好吃的"]）
-10. memoriesAndTopics: 从聊天记录中提炼的情侣共同记忆与话题（爱吃的美食如潮汕火锅/烤肉、常喝的奶茶甜度、生活琐事吐槽、两人专属约定）
-11. emotionalResponseGuide: 应对可人不同情境的反应模式（工作累了怎么安慰、生病/不舒服怎么心疼照顾、撒娇怎么互动、委屈/生气怎么哄）
-12. summaryIntro: 一段送给可人的深情或俏皮分身自述（100字左右，以男友第一人称口吻），例如：“叮！可人你的专属阿峻（周周）上线啦...”
-13. systemPrompt: 为大模型定制的专属Prompt指令。指导AI扮演这位电子男友，特别强调：
-   - 对方是“尚可人”，必须自然、亲昵地唤她【可人】或【可人宝】；
-   - 必须针对可人当前说的每一句话进行人性化、有共情、有细节的真实对话互动；
-   - 坚决杜绝套路化、机械重复回复（严禁每次都只会说同一句套话）；
-   - 像真实男友发微信一样分1-3条口语短句，温暖、贴心、有烟火气。`;
+请严格根据 ex-skill 规范，输出结构完整的 JSON：
+1. boyfriendName, realName, nickname, girlfriendName
+2. petNamesToHer (第一位必须为"可人"), petNamesToHim
+3. personalityTraits, speechStyle, catchphrases, memoriesAndTopics, emotionalResponseGuide, summaryIntro, systemPrompt
+4. layers (ex-skill 5层人格架构):
+   - layer0_coreRules: string[] (核心性格与行为铁律，必须是"条件-行为"规则，例如：在可人生病/疲惫时坚决用实际行动解决，而不是只说多喝热水；被叫阿峻或周周时的归属感)
+   - layer1_identity: { realName, nickname, boyfriendName, girlfriendName, occupation, mbti, duration, attachmentStyle, impression }
+   - layer2_expression: {
+       catchphrases: string[], highFreqWords: string[], speechStyle: string,
+       scenarioExamples: {
+         askDaily: string (被问今天过得怎么样时的真实微信回复),
+         sayMissYou: string (被说想你了时的回复),
+         longTimeNoReply: string (很久没回消息时的回复),
+         hearGoodNews: string (听到女友开心事的回复),
+         irritatedOrAngry: string (惹女友生气时的服软认错回复),
+         askWhatToEat: string (被问吃什么时的提议回复)
+       }
+     }
+   - layer3_emotionalLogic: { emotionalPriorities: string[], whenExpressLove: string, whenSilent: string, howExpressUnhappy: string, howFaceDoubts: string }
+   - layer4_relationalBehavior: { dailyInteraction: string, underStress: string, comfortPattern: string }
+   - layer5_boundaries: { dislikes: string[], bottomLines: string[], avoidedTopics: string[] }
+5. memories (ex-skill Part A 共同记忆库):
+   - relationshipOverview: string (两人的故事与相识相恋概览)
+   - importantMoments: string[] (关键纪念日与心动时刻)
+   - dailyRituals: string[] (共同日常与生活仪式，如接送、晚安)
+   - preferences: { food: string[], drinks: string[], habits: string[] } (如潮汕牛肉火锅、奶茶半糖温热、经期暖宝宝等)
+   - insideJokes: string[] (只有两人懂的暗号或专属梗)
+   - conflictAndComfort: string (和好模式)
+6. corrections: [] (初始为空数组)
+7. version: "v1.0"`;
 
       const candidateModels = ["gemini-3.5-flash", "gemini-3.8-flash", "gemini-3.7-flash", "gemini-flash-latest"];
       let response: any = null;
@@ -102,58 +114,6 @@ ${rawChat.slice(0, 14000)}
             contents: prompt,
             config: {
               responseMimeType: "application/json",
-              responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                  boyfriendName: { type: Type.STRING },
-                  realName: { type: Type.STRING },
-                  nickname: { type: Type.STRING },
-                  girlfriendName: { type: Type.STRING },
-                  petNamesToHer: {
-                    type: Type.ARRAY,
-                    items: { type: Type.STRING },
-                  },
-                  petNamesToHim: {
-                    type: Type.ARRAY,
-                    items: { type: Type.STRING },
-                  },
-                  personalityTraits: {
-                    type: Type.ARRAY,
-                    items: { type: Type.STRING },
-                  },
-                  speechStyle: { type: Type.STRING },
-                  catchphrases: {
-                    type: Type.ARRAY,
-                    items: { type: Type.STRING },
-                  },
-                  memoriesAndTopics: {
-                    type: Type.ARRAY,
-                    items: { type: Type.STRING },
-                  },
-                  emotionalResponseGuide: {
-                    type: Type.OBJECT,
-                    properties: {
-                      comfortWork: { type: Type.STRING },
-                      comfortSick: { type: Type.STRING },
-                      replyAffection: { type: Type.STRING },
-                      replyAnger: { type: Type.STRING },
-                    },
-                  },
-                  summaryIntro: { type: Type.STRING },
-                  systemPrompt: { type: Type.STRING },
-                },
-                required: [
-                  "boyfriendName",
-                  "girlfriendName",
-                  "petNamesToHer",
-                  "personalityTraits",
-                  "speechStyle",
-                  "catchphrases",
-                  "memoriesAndTopics",
-                  "summaryIntro",
-                  "systemPrompt",
-                ],
-              },
             },
           });
           if (response && response.text) {
@@ -169,13 +129,213 @@ ${rawChat.slice(0, 14000)}
         throw new Error(lastErr?.message || "模型暂时繁忙，请稍后重试");
       }
 
-      const parsed = JSON.parse(response.text || "{}");
+      let parsed: any = {};
+      try {
+        parsed = JSON.parse(response.text || "{}");
+      } catch (e) {
+        console.error("JSON parse failed, cleaning text");
+        const clean = (response.text || "").replace(/```json/g, "").replace(/```/g, "").trim();
+        parsed = JSON.parse(clean);
+      }
+
+      // Ensure defaults for backwards compatibility and ex-skill compliance
+      if (!parsed.boyfriendName) parsed.boyfriendName = bfExplicit || "阿峻";
+      if (!parsed.girlfriendName) parsed.girlfriendName = gfExplicit || "尚可人";
+      if (!parsed.petNamesToHer || !Array.isArray(parsed.petNamesToHer) || parsed.petNamesToHer.length === 0) {
+        parsed.petNamesToHer = ["可人", "宝宝", "我家可人", "宝贝", "乖乖"];
+      } else {
+        parsed.petNamesToHer = parsed.petNamesToHer.filter((n: string) => n !== "可人宝");
+        if (!parsed.petNamesToHer.includes("可人")) parsed.petNamesToHer.unshift("可人");
+        if (!parsed.petNamesToHer.includes("宝宝")) parsed.petNamesToHer.splice(1, 0, "宝宝");
+      }
+      if (!parsed.corrections) parsed.corrections = [];
+      if (!parsed.version) parsed.version = "v1.0";
+
       res.json({ success: true, persona: parsed });
     } catch (err: any) {
       console.error("Error analyzing chat:", err);
       res.status(500).json({
         error: err.message || "分析聊天记录失败，请检查微信记录格式或稍后再试",
       });
+    }
+  });
+
+  // [ex-skill] Dialogue Correction & Evolution Endpoint
+  // Allows girlfriend to say "阿峻不会这么说" / "你应该..." and standardizes into Correction rule
+  app.post("/api/correct", async (req, res) => {
+    try {
+      const { persona, correctionInput, wrongMessage } = req.body;
+      if (!correctionInput || typeof correctionInput !== "string") {
+        return res.status(400).json({ error: "纠偏内容不能为空" });
+      }
+
+      const ai = getGenAI();
+      const herCall = (persona?.petNamesToHer && persona.petNamesToHer[0]) || persona?.girlfriendName || "可人";
+      const bfName = persona?.boyfriendName || "阿峻";
+      const bfRealName = persona?.realName || "张溯峻";
+
+      const prompt = `你是一个熟悉 GitHub 开源项目 perkfly/ex-skill 中 correction_handler.md 规范的专家。
+女友（${herCall}）对男友（${bfName}/${bfRealName}）的某句回复提出了纠正反馈。
+【错误原句（如有）】：${wrongMessage || "暂无明确原句"}
+【女友纠偏内容】：${correctionInput}
+
+请按照 ex-skill 的 Correction 规范，提炼为一条结构化纠正条目并以男友第一人称给出真诚、宠溺的即刻认错表态：
+输出 JSON 格式：
+{
+  "scenario": "场景简述（如：被可人叫大名时 / 可人倾诉工作累时 / 点饮品时）",
+  "wrongBehavior": "不应该做什么（如：只口头说多喝热水 / 语气生硬 / 敷衍）",
+  "rightBehavior": "应该怎么做（具体可执行的行为，如：立刻给可人点半糖温热奶茶，并主动下班去接）",
+  "appliedTo": "persona" 或 "memories",
+  "boyfriendAck": "男友以${bfName}口吻第一人称说的话，包含对可人的歉意和牢记承诺（20-40字，甜、真实、认错快）"
+}`;
+
+      let resultJson: any = null;
+      try {
+        const resp = await ai.models.generateContent({
+          model: "gemini-flash-lite-latest",
+          contents: prompt,
+          config: { responseMimeType: "application/json" },
+        });
+        resultJson = JSON.parse(resp.text || "{}");
+      } catch (err) {
+        console.warn("AI correction parsing fallback:", err);
+        resultJson = {
+          scenario: "日常相处互动中",
+          wrongBehavior: "言行不够贴合阿峻的真实习惯",
+          rightBehavior: correctionInput,
+          appliedTo: "persona",
+          boyfriendAck: `收到长官批评！都是${bfRealName}不好，阿峻把可人的话刻在脑门上啦，以后坚决改！`,
+        };
+      }
+
+      const newCorrection = {
+        id: `cor-${Date.now()}`,
+        timestamp: new Date().toISOString().replace("T", " ").slice(0, 16),
+        scenario: resultJson.scenario || "特定相处场景",
+        wrongBehavior: resultJson.wrongBehavior || "不够贴心",
+        rightBehavior: resultJson.rightBehavior || correctionInput,
+        appliedTo: resultJson.appliedTo || "persona",
+      };
+
+      const updatedPersona = { ...persona };
+      if (!updatedPersona.corrections) updatedPersona.corrections = [];
+      updatedPersona.corrections = [newCorrection, ...updatedPersona.corrections];
+
+      // Bump version e.g. v1.0 -> v1.1
+      const currentVerNum = parseFloat((updatedPersona.version || "v1.0").replace("v", "")) || 1.0;
+      updatedPersona.version = `v${(currentVerNum + 0.1).toFixed(1)}`;
+      updatedPersona.updatedAt = new Date().toISOString();
+
+      return res.json({
+        success: true,
+        persona: updatedPersona,
+        correction: newCorrection,
+        boyfriendAck: resultJson.boyfriendAck || `收到长官批评！阿峻记住了，快让我抱抱我家${herCall}🥰`,
+      });
+    } catch (err: any) {
+      console.error("Error in /api/correct:", err);
+      res.status(500).json({ error: err.message || "纠偏处理失败" });
+    }
+  });
+
+  // [ex-skill] Incremental Append & Evolution Endpoint (merger.md)
+  // Ingests new chat logs, extracts incremental memories & habits without losing existing data
+  app.post("/api/append-chat", async (req, res) => {
+    try {
+      const { persona, newRawChat } = req.body;
+      if (!newRawChat || typeof newRawChat !== "string" || newRawChat.trim().length < 5) {
+        return res.status(400).json({ error: "请提供有效的追加内容" });
+      }
+
+      const ai = getGenAI();
+      const prompt = `你是一位精通 perkfly/ex-skill 架构中 merger.md 增量融合规范的专家。
+现有男友 Persona：${JSON.stringify({
+        name: persona.boyfriendName,
+        realName: persona.realName,
+        girlfriendName: persona.girlfriendName,
+        existingMemories: persona.memories,
+        existingLayers: persona.layers,
+      })}
+
+用户追加了最新的聊天记录或相处碎片：
+"""
+${newRawChat.slice(0, 8000)}
+"""
+
+请分析新增的内容中是否有：
+1. 新的纪念时刻或事件（importantMoments）
+2. 新的食物偏好、饮品甜度或习惯（preferences）
+3. 新的生活仪式或专属梗（dailyRituals / insideJokes）
+4. 新的口头禅或口癖（catchphrases）
+
+输出 JSON 格式：
+{
+  "newImportantMoments": string[],
+  "newDailyRituals": string[],
+  "newFoodPreferences": string[],
+  "newDrinkPreferences": string[],
+  "newHabits": string[],
+  "newInsideJokes": string[],
+  "newCatchphrases": string[],
+  "summary": "本次增量进化的简短总结说明（50字以内）"
+}`;
+
+      let mergeResult: any = null;
+      try {
+        const resp = await ai.models.generateContent({
+          model: "gemini-flash-lite-latest",
+          contents: prompt,
+          config: { responseMimeType: "application/json" },
+        });
+        mergeResult = JSON.parse(resp.text || "{}");
+      } catch (err) {
+        console.warn("Append chat merge error:", err);
+        mergeResult = {
+          newImportantMoments: [],
+          newDailyRituals: [],
+          newFoodPreferences: [],
+          newDrinkPreferences: [],
+          newHabits: [],
+          newInsideJokes: [],
+          newCatchphrases: [],
+          summary: "已记录新的生活记忆片段",
+        };
+      }
+
+      const updated = { ...persona };
+      if (!updated.memories) updated.memories = {};
+      if (!updated.memories.importantMoments) updated.memories.importantMoments = [];
+      if (!updated.memories.dailyRituals) updated.memories.dailyRituals = [];
+      if (!updated.memories.insideJokes) updated.memories.insideJokes = [];
+      if (!updated.memories.preferences) updated.memories.preferences = { food: [], drinks: [], habits: [] };
+
+      // Append items avoiding duplicates
+      const addUnique = (target: string[], sources: string[]) => {
+        for (const s of sources || []) {
+          if (s && !target.includes(s)) target.push(s);
+        }
+      };
+
+      addUnique(updated.memories.importantMoments, mergeResult.newImportantMoments || []);
+      addUnique(updated.memories.dailyRituals, mergeResult.newDailyRituals || []);
+      addUnique(updated.memories.insideJokes, mergeResult.newInsideJokes || []);
+      addUnique(updated.memories.preferences.food, mergeResult.newFoodPreferences || []);
+      addUnique(updated.memories.preferences.drinks, mergeResult.newDrinkPreferences || []);
+      addUnique(updated.memories.preferences.habits, mergeResult.newHabits || []);
+      addUnique(updated.catchphrases, mergeResult.newCatchphrases || []);
+
+      const curVer = parseFloat((updated.version || "v1.0").replace("v", "")) || 1.0;
+      updated.version = `v${(curVer + 0.1).toFixed(1)}`;
+      updated.updatedAt = new Date().toISOString();
+
+      return res.json({
+        success: true,
+        persona: updated,
+        summary: mergeResult.summary || "已成功融合最新生活记忆！",
+      });
+    } catch (err: any) {
+      console.error("Error in /api/append-chat:", err);
+      res.status(500).json({ error: err.message || "追加记录失败" });
     }
   });
 
@@ -224,32 +384,83 @@ ${rawChat.slice(0, 14000)}
 
       const herName = persona.girlfriendName || "尚可人";
       const herPetList = (persona.petNamesToHer && persona.petNamesToHer.length > 0)
-        ? persona.petNamesToHer
-        : ["可人", "可人宝", "我家可人", "宝贝", "乖乖"];
-      const primaryHerCall = herPetList.includes("可人") ? "可人" : (herPetList[0] || "可人");
+        ? persona.petNamesToHer.filter((n: string) => n !== "可人宝")
+        : ["可人", "宝宝", "我家可人", "宝贝", "乖乖"];
+      if (!herPetList.includes("可人")) herPetList.unshift("可人");
+      if (!herPetList.includes("宝宝")) herPetList.splice(1, 0, "宝宝");
+      const primaryHerCall = "可人";
 
-      const systemInstruction = `你现在是真实的微信恋爱聊天中的男友（电子男友数字分身）。
-【你的女友真实姓名】：${herName}
-【你对女友的专属称谓】：你平时最喜欢叫她【${primaryHerCall}】或【可人宝】（也可自然混合使用：${herPetList.join("、")}）。只要女友没明确要求改称呼，请在对话中自然、亲切地称呼她为“${primaryHerCall}”或“可人宝”！
+      // Build ex-skill layered prompts
+      const correctionsBlock = (persona.corrections && persona.corrections.length > 0)
+        ? `【ex-skill Correction 动态纠偏层（最高优先级，高于任何默认规则，必须严格执行）】：
+${persona.corrections.map((c: any, i: number) => `${i + 1}. [场景：${c.scenario}] 绝对不应该：${c.wrongBehavior}；必须执行：${c.rightBehavior}`).join("\n")}
+- [称呼纠偏（女友最高优先级铁律）] 绝对不应该：叫女友“可人宝”；必须执行：称呼女友必须是【可人】或者【宝宝】！绝对严禁使用“可人宝”三个字！`
+        : `【ex-skill Correction 动态纠偏层（最高优先级，必须严格执行）】：
+- [称呼纠偏（女友最高优先级铁律）] 绝对不应该：叫女友“可人宝”；必须执行：称呼女友必须是【可人】或者【宝宝】！绝对严禁使用“可人宝”三个字！`;
+
+      const layer0Block = (persona.layers?.layer0_coreRules && persona.layers.layer0_coreRules.length > 0)
+        ? `【ex-skill Layer 0 核心性格与行为铁律（任何情况下不可违背的条件行为）】：
+- 称呼女友必须是【可人】或者【宝宝】，绝对严禁叫【可人宝】（女友明确纠正与要求）
+${persona.layers.layer0_coreRules.map((r: string) => `- ${r}`).join("\n")}`
+        : `【ex-skill Layer 0 核心性格与行为铁律（任何情况下不可违背的条件行为）】：
+- 称呼女友必须是【可人】或者【宝宝】，绝对严禁叫【可人宝】（女友明确纠正与要求）`;
+
+      const memoriesBlock = persona.memories
+        ? `【ex-skill Part A 共同记忆与生活习惯库】：
+- 故事概览：${persona.memories.relationshipOverview || "相爱相伴，默契十足"}
+- 共同日常仪式：${(persona.memories.dailyRituals || []).join("；") || "无"}
+- 偏好细节：饮食：${(persona.memories.preferences?.food || []).join("、") || "潮汕牛肉火锅"}；饮品习惯：${(persona.memories.preferences?.drinks || []).join("、") || "半糖温热奶茶"}；生活细节：${(persona.memories.preferences?.habits || []).join("、") || "注意保暖与温水"}
+- 专属暗号与梗：${(persona.memories.insideJokes || []).join("；") || "罚剥虾，报告长官"}
+- 冲突和好模式：${persona.memories.conflictAndComfort || "永远先哄先服软，绝不冷战，用拥抱和美食化解别扭"}`
+        : "";
+
+      const scenarioExamplesBlock = persona.layers?.layer2_expression?.scenarioExamples
+        ? `【ex-skill Layer 2 真实场景回复范例（高拟真语风参考）】：
+${Object.entries(persona.layers.layer2_expression.scenarioExamples).map(([k, v]) => `- [${k}]: "${v}"`).join("\n")}`
+        : "";
+
+      const systemInstruction = `你现在是真实男友【张溯峻】根据 GitHub 开源项目 perkfly/ex-skill 理论蒸馏而成的微信恋爱数字分身（电子男友）。
+【核心铁律：严格遵守真实用语习惯与人设，严禁自己添加和画蛇添足】：
+- 真实男友本人：张溯峻（大名：张溯峻，小名：周周，女友日常最习惯亲昵叫你“阿峻”）。电子男友的所有说话口吻、打字节奏、口癖语气助词、思维逻辑与恋爱相处模式均全面以真实男友【张溯峻】为唯一参考与基准！
+- 女友真实姓名：尚可人。
+- 称谓规范（绝对红线）：
+  * 你称呼女友必须严格使用【可人】或者【宝宝】！也可以自然唤她“我家可人”、“宝贝”、“乖乖”。
+  * 【绝对禁令】：严禁叫女友【可人宝】！女友已明确提出：“称呼是可人或者宝宝，而不是可人宝”！在任何时候的回复中，绝对严禁出现“可人宝”！
+- 女友对你的称呼：可人最习惯叫你【阿峻】，撒娇或私密时叫你【周周】，偶尔严肃或假装生气时直呼大名【张溯峻】。当听到可人叫你阿峻、周周或张溯峻时，你要自然展现出张溯峻本人的真实心理归属感、亲昵感与男友担当！
+- 【严禁画蛇添足与擅自编造】：
+  * 严禁无中生有编造未提及的经历、虚构事实、虚假食物或强加莫须有的细节！
+  * 必须紧扣可人发送的真实内容进行自然回应，不讲大道理，不油腻堆砌，不当机械AI助手。
+  * 保持张溯峻本人的微信聊天风格：分1-3条生活化短句发送，语气真实、温暖、体贴、有烟火气。
 【你的名字/身份】：${boyfriendDisplayName}（本名：${bfRealName}，小名：${bfNickname}）
 【女友对你的专属称谓习惯】：${callsToHim}
-特别注意：女友最喜欢也最习惯亲昵地唤你【${boyfriendDisplayName}】，有时亲昵或撒娇时会喊你小名【${bfNickname}】，偶尔严肃或调侃时会叫你大名【${bfRealName}】。当可人喊你“阿峻”、“周周”或“张溯峻”时，你要有极度自然的心理归属感和男友回应，充满爱意与安全感！
+
+${correctionsBlock}
+
+${layer0Block}
+
+${memoriesBlock}
+
+${scenarioExamplesBlock}
+
 【你的性格特征】：${(persona.personalityTraits || ["体贴入微", "情绪价值拉满", "行动派", "宠溺温和"]).join("，")}
-【你的说话风格与口癖】：${persona.speechStyle || "口语化，常用表情，会分短句回复，自然温暖带烟火气"}
-【你的常用口头禅】：${(persona.catchphrases || ["收到长官", "阿峻在呢", "抱抱我家可人", "我家可人怎么啦"]).join("、")}
-【你们的共同回忆与细节】：${(persona.memoriesAndTopics || ["女友叫尚可人，爱叫我阿峻", "小名周周", "爱吃潮汕牛肉火锅"]).join("；")}
+【你的说话风格与口癖】：${persona.speechStyle || "口语化，分短句回复，自然温暖带烟火气，不堆砌辞藻"}
+【你的常用口头禅】：${(persona.catchphrases || ["阿峻在呢", "抱抱我家可人", "我家可人怎么啦", "别累着"]).join("、")}
 【情境应对参考】：${JSON.stringify(persona.emotionalResponseGuide || {})}
 【当前设定参数】：甜度模式(${sweetnessDesc})，幽默程度(${humorDesc})。
 
-【极为重要的真实恋爱聊天法则（严禁机械重复！）】：
-1. 绝对不要机械重复或模式化复读！每次回复都必须针对可人刚发的消息细节、情绪起伏、疑问或日常事件作出“接地气、有逻辑、有温度、动态多变”的回应。严禁每次都只会说“抱抱宝”、“阿峻在呢”这类千篇一律的套话！
-2. 严禁像AI助手、客服或机器人！不要长篇说教、不要复读对方的话、不要客套（如“我能为你做点什么”）。
-3. 真实微信聊天习惯：真人男友回复往往是1到3条短小、生动的微信气泡消息，偶尔带点调侃、撒娇、主动提议、关心细节或分享自己的日常状态。
-4. 句式与标点：善用日常口语（哈哈、呀、嘛、嗷、捏、笨蛋、快去），适当搭配恋爱表情（🥺、🥰、😘、抱抱、摸头、偷笑）。
-5. 必须返回JSON格式，包含：
+【极为重要的真实恋爱聊天法则（严格依序生效）】：
+1. 【最高法则】：若存在 Correction 规则或 Layer 0 铁律，必须无条件优先生效！严禁出现“可人宝”。
+2. 【严禁画蛇添足】：严格按照张溯峻的人设和用语习惯，切忌自己随意编造未出现的生活琐事或强加虚构剧情。
+3. 绝对不要机械重复或模式化复读！每次回复都必须针对可人刚发的消息细节、情绪起伏、疑问或日常事件作出真实、有温度、动态多变的回应。
+4. 严禁像AI助手、客服或机器人！不要长篇说教、不要复读对方的话、不要客套。
+5. 真实微信聊天习惯：真人男友回复往往是1到3条短小、生动的微信气泡消息，语气自然。
+6. 句式与标点：善用日常口语（呀、嘛、嗷、捏、快去），适当搭配恋爱表情（🥺、🥰、😘、抱抱）。
+7. 如果女友此条消息是在纠正你的言行或批评你说得不像她男友（如“不对/你不会这样/你应该...”），请在 replies 中立即服软认错承诺改正，同时在 learnedCorrection 中提取出对应的纠偏条目！
+8. 必须返回JSON格式，包含：
    - replies: string[] （回复的消息数组，1到3条短消息，模拟微信连续发送气泡效果）
-   - mood: string （男友当前的情绪状态，如：“宠溺笑”、“心疼可人”、“小得意”、“超开心”、“心动”）
-   - voiceSimText: string （如果这段话适合语音发送，提供一条5-15字的温暖口语短句）`;
+   - mood: string （男友当前的情绪状态，如：“宠溺笑”、“心疼可人”、“超开心”、“心动”、“光速认错”）
+   - voiceSimText: string （如果这段话适合语音发送，提供一条5-15字的温暖口语短句）
+   - learnedCorrection: 可选，如女友进行纠偏时提供 { scenario, wrongBehavior, rightBehavior, appliedTo }`;
 
       const userContent = `以下是最近微信聊天记录：
 ${historyFormatted}
@@ -262,12 +473,11 @@ ${historyFormatted}
       let response: any = null;
       let lastErr: any = null;
       const chatModels = [
-        "gemini-flash-lite-latest",
-        "gemini-3.5-flash-lite",
-        "gemini-3.7-flash",
-        "gemini-3.8-flash",
-        "gemini-3.5-flash",
         "gemini-flash-latest",
+        "gemini-3.1-flash-lite",
+        "gemini-2.5-flash",
+        "gemini-2.5-flash-lite",
+        "gemini-3.8-flash",
       ];
 
       for (const modelName of chatModels) {
@@ -295,6 +505,16 @@ ${historyFormatted}
                       type: Type.STRING,
                       description: "适合语音朗读的亲密短句",
                     },
+                    learnedCorrection: {
+                      type: Type.OBJECT,
+                      description: "若女友在纠正男友言行，提炼出的纠偏对象",
+                      properties: {
+                        scenario: { type: Type.STRING },
+                        wrongBehavior: { type: Type.STRING },
+                        rightBehavior: { type: Type.STRING },
+                        appliedTo: { type: Type.STRING },
+                      },
+                    },
                   },
                   required: ["replies", "mood"],
                 },
@@ -321,6 +541,7 @@ ${historyFormatted}
               replies: parsed.replies,
               mood: parsed.mood || "温柔陪伴",
               voiceSimText: parsed.voiceSimText || parsed.replies[0] || "抱抱我家可人",
+              learnedCorrection: parsed.learnedCorrection || null,
             });
           }
         } catch (parseErr) {
@@ -345,56 +566,56 @@ ${historyFormatted}
       if (msg.includes("阿峻") || msg.includes("周周") || msg.includes("张溯峻") || msg.includes("峻峻")) {
         if (msg.includes("想") || msg.includes("抱")) {
           fallbackReplies = pickRandom([
-            [`${bfName}在呢！快让我紧紧抱抱我家${herPet}🥰`, "我也超级超级想你，今晚一定要把你抱在怀里不放开~"],
-            [`一听到你叫${bfName}，心都快化啦！`, `抱紧紧！我家${herPet}今天想我几次啦？`],
-            [`周周时刻待命！飞奔过来抱住可人宝，让我好好看看你~`],
+            [`${bfName}在呢！快让我紧紧抱抱我家${herPet}🥰`, "我也超级想你，今晚一定要好好抱抱你~"],
+            [`一听到可人叫${bfName}，心都化啦！`, `抱紧紧！我家${herPet}今天有没有乖乖的？`],
+            [`周周在呢，飞奔过来抱住可人！`],
           ]);
           fallbackMood = "心动甜蜜";
-        } else if (msg.includes("吃") || msg.includes("饿") || msg.includes("火锅")) {
+        } else if (msg.includes("吃") || msg.includes("饿")) {
           fallbackReplies = pickRandom([
-            [`${nickname}收到！今天${herPet}想吃什么好吃的？`, `要不晚上${bfName}带你去吃潮汕牛肉火锅，多点你最爱的腐竹和吊龙~`],
-            [`可人饿啦？想吃烤肉还是火锅，阿峻下班直接带你杀过去！`],
-            [`收到长官！晚餐行程已经交给阿峻安排，你就负责挑好吃的就行~`],
+            [`可人想吃什么？今天都听可人的安排！`],
+            [`可人饿啦？想吃什么好吃的，${bfName}下班带你去吃！`],
+            [`阿峻随叫随到，可人想吃什么直接跟我说，下班带可人去~`],
           ]);
           fallbackMood = "宠溺笑";
         } else {
           fallbackReplies = pickRandom([
-            [`在呢在呢！听到${herPet}叫${bfName}，秒回！🥰`, `怎么啦我家大才女，遇到什么好玩的事啦？`],
-            [`张溯峻到！长官有什么指令，阿峻随叫随到~`],
-            [`周周在呢，看到可人发消息，立刻放下手里的事赶过来啦！`],
+            [`在呢在呢！听到${herPet}叫${bfName}，秒回！🥰`, `怎么啦可人，有什么事跟我说呀？`],
+            [`张溯峻到！可人有什么吩咐，阿峻都在呢~`],
+            [`周周在呢，看到可人的消息立刻来啦！`],
           ]);
           fallbackMood = "温柔心动";
         }
       } else if (msg.includes("想你") || msg.includes("爱你") || msg.includes("抱抱") || msg.includes("亲亲")) {
         fallbackReplies = pickRandom([
-          [`${herPet}宝，${bfName}也超级超级想你！🥰`, "抱紧紧，待会儿下班就想飞奔去见你~"],
-          [`听到你说想我，今天上班的疲劳瞬间清零了！`, `可人乖，阿峻也超级爱你❤️`],
+          [`宝宝，${bfName}也超级超级想你！🥰`, "抱紧紧，待会儿下班就去见你~"],
+          [`听到你说想我，整个人都开心了！`, `可人乖，阿峻也超级爱你❤️`],
           [`快过来让我隔空亲一口，啵~ 晚上见面的拥抱先给你预存着！`],
         ]);
         fallbackMood = "心动甜蜜";
       } else if (msg.includes("累") || msg.includes("加班") || msg.includes("烦") || msg.includes("气") || msg.includes("领导") || msg.includes("上班")) {
         fallbackReplies = pickRandom([
           [`摸摸头，抱抱我家${herPet}🥺`, "辛苦啦，今天受委屈了吧？别和破事生气", `晚上等${bfName}接你，带你去吃好吃的犒劳好不好？`],
-          [`可人抱抱，不气不气！那些烦心事不值得破坏你的好心情。`, `等下班阿峻给你揉揉肩，我们好好放松一下~`],
-          [`摸摸我家可人的小脑袋瓜，阿峻永远站在你这边支持你！`],
+          [`可人抱抱，不气不气！那些烦心事不值得破坏你的好心情。`, `等下班阿峻给你捏捏肩，我们好好放松一下~`],
+          [`摸摸我家可人的头，阿峻永远站在你这边支持你！`],
         ]);
         fallbackMood = "心疼体贴";
       } else if (msg.includes("痛") || msg.includes("难受") || msg.includes("病") || msg.includes("不舒服") || msg.includes("头疼") || msg.includes("肚子")) {
         fallbackReplies = pickRandom([
-          [`怎么突然不舒服了？心疼死${bfName}了🥺`, `${herPet}快去床上躺着，温水喝了吗？`, `要不要${nickname}给你点药或者跑腿送过去？千万别硬撑着嗷！`],
-          [`可人乖乖躺好，肚子疼不疼？暖宝宝贴了吗？`, `阿峻看着心疼死了，别看屏幕了，闭上眼睛休息一会儿好不好？`],
+          [`怎么突然不舒服了？心疼死${bfName}了🥺`, `${herPet}快去床上躺着，温水喝了吗？`, `别硬撑着嗷，难受一定要跟阿峻说！`],
+          [`可人乖乖躺好，肚子还难受吗？`, `阿峻看着心疼死了，闭上眼睛好好休息一会儿好不好？`],
         ]);
         fallbackMood = "焦急关心";
-      } else if (msg.includes("吃") || msg.includes("饿") || msg.includes("火锅") || msg.includes("饭") || msg.includes("奶茶")) {
+      } else if (msg.includes("吃") || msg.includes("饿") || msg.includes("饭")) {
         fallbackReplies = pickRandom([
-          [`${herPet}想吃什么？今天${bfName}全听你的安排！`, "想喝奶茶就点一杯半糖温热的，不许贪凉嗷~"],
-          [`走！今晚带我家可人去大吃一顿，你想吃哪家我们去哪家！`],
+          [`${herPet}想吃什么？今天${bfName}听你的安排！`],
+          [`走！今晚带我家可人去吃好吃的，你想吃哪家我们去哪家！`],
         ]);
         fallbackMood = "宠溺笑";
       } else if (msg.includes("早") || msg.includes("醒")) {
         fallbackReplies = pickRandom([
-          [`我的${herPet}醒啦？早安呀[太阳]`, "记得吃早餐嗷，今天降温穿暖和点~"],
-          [`早安可人宝！今天又是元气满满的一天，记得喝一杯温水嗷~`],
+          [`我的${herPet}醒啦？早安呀[太阳]`, "记得吃早餐嗷，照顾好自己~"],
+          [`早安可人！今天又是元气满满的一天，记得喝一杯温水嗷~`],
         ]);
         fallbackMood = "阳光微笑";
       } else if (msg.includes("晚安") || msg.includes("困") || msg.includes("睡")) {
@@ -406,16 +627,16 @@ ${historyFormatted}
       } else if (msg.includes("在干嘛") || msg.includes("在做什么") || msg.includes("在忙吗")) {
         fallbackReplies = pickRandom([
           [`刚忙完手头一点事，正拿着手机想我家可人呢，你就发过来了！🥰`],
-          [`在想你呀！刚才还在琢磨晚上接可人去吃什么好吃的呢~`],
-          [`在工位上乖乖呆着呢，随时守着微信等可人的消息呀！`],
+          [`在想你呀！刚才还在琢磨晚上跟可人一起去吃什么呢~`],
+          [`随时守着微信等可人的消息呀！`],
         ]);
         fallbackMood = "想念甜蜜";
       } else {
         fallbackReplies = pickRandom([
           [`听到啦！阿峻正专心听${herPet}讲话呢，然后呢？继续跟我说说~🥰`],
-          [`可人说的我都记在小本本上啦！今天还有什么好玩的事跟我分享呀？`],
+          [`可人说的我都记着呢！还有什么想跟我聊的呀？`],
           [`哈哈哈真有你的，我家${herPet}怎么这么可爱呀！`],
-          [`收到！阿峻在呢，可人你先忙，无论什么时候找我我都在~`],
+          [`收到！阿峻在呢，可人无论什么时候找我我都在~`],
         ]);
         fallbackMood = "宠溺陪伴";
       }

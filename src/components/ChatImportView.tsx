@@ -127,15 +127,13 @@ export const ChatImportView: React.FC<ChatImportViewProps> = ({
       setTimeout(() => {
         setIsAnalyzing(false);
         const effectiveGfName = girlfriendName.trim() || data.persona.girlfriendName || "尚可人";
-        const rawPetNamesToHer: string[] = Array.isArray(data.persona.petNamesToHer)
+        const rawPetNamesToHer: string[] = (Array.isArray(data.persona.petNamesToHer)
           ? data.persona.petNamesToHer
-          : [];
-        // Ensure "可人" is present and prioritized when gf is 尚可人 or 可人
-        const enrichedPetNames = rawPetNamesToHer.includes("可人")
-          ? rawPetNamesToHer
-          : (effectiveGfName.includes("可人")
-              ? ["可人", "可人宝", ...rawPetNamesToHer.filter((n) => n !== "可人")]
-              : rawPetNamesToHer);
+          : []).filter((n) => n !== "可人宝");
+        // Ensure "可人" and "宝宝" are present and prioritized
+        const enrichedPetNames = [...rawPetNamesToHer];
+        if (!enrichedPetNames.includes("可人")) enrichedPetNames.unshift("可人");
+        if (!enrichedPetNames.includes("宝宝")) enrichedPetNames.splice(1, 0, "宝宝");
 
         onPersonaGenerated({
           ...data.persona,
@@ -143,7 +141,7 @@ export const ChatImportView: React.FC<ChatImportViewProps> = ({
           realName: data.persona.realName || currentPersona?.realName || "张溯峻",
           nickname: data.persona.nickname || currentPersona?.nickname || "周周",
           girlfriendName: effectiveGfName,
-          petNamesToHer: enrichedPetNames.length > 0 ? enrichedPetNames : ["可人", "可人宝", "宝贝", "乖乖"],
+          petNamesToHer: enrichedPetNames.length > 0 ? enrichedPetNames : ["可人", "宝宝", "宝贝", "乖乖"],
           petNamesToHim: data.persona.petNamesToHim && data.persona.petNamesToHim.length > 0
             ? data.persona.petNamesToHim
             : ["阿峻", "周周", "张溯峻", "峻峻", "老公"],

@@ -23,14 +23,36 @@ export default function App() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && parsed.boyfriendName !== "阿哲") {
+          const rawPets: string[] = (parsed.petNamesToHer || ["可人", "宝宝", "我家可人", "宝贝", "乖乖"])
+            .filter((n: string) => n !== "可人宝");
+          if (!rawPets.includes("可人")) rawPets.unshift("可人");
+          if (!rawPets.includes("宝宝")) rawPets.splice(1, 0, "宝宝");
+
+          // Ensure correction and core rule exist
+          const existingCors = (parsed.corrections || []).filter((c: any) => c.wrongBehavior !== "叫'可人宝'");
+          existingCors.unshift({
+            id: "cor-name-pet",
+            timestamp: "2026-09-12 21:30",
+            scenario: "称呼可人时",
+            wrongBehavior: "叫'可人宝'",
+            rightBehavior: "称呼必须是【可人】或者【宝宝】，绝对严禁叫'可人宝'",
+            appliedTo: "persona",
+          });
+
+          const existingRules = (parsed.layers?.layer0_coreRules || []).filter((r: string) => !r.includes("可人宝"));
+          existingRules.unshift("称呼女友必须是【可人】或者【宝宝】，绝对严禁叫【可人宝】（女友明确指令要求）");
+
           return {
             ...parsed,
             realName: parsed.realName || "张溯峻",
             nickname: parsed.nickname || "周周",
             girlfriendName: parsed.girlfriendName === "宝宝" ? "尚可人" : (parsed.girlfriendName || "尚可人"),
-            petNamesToHer: parsed.petNamesToHer && parsed.petNamesToHer.includes("可人")
-              ? parsed.petNamesToHer
-              : ["可人", "可人宝", "我家可人", ...(parsed.petNamesToHer || ["宝贝", "乖乖"])],
+            petNamesToHer: rawPets,
+            corrections: existingCors,
+            layers: {
+              ...(parsed.layers || {}),
+              layer0_coreRules: existingRules,
+            },
           };
         }
       }
@@ -163,6 +185,7 @@ export default function App() {
           <WeChatChatView
             persona={persona}
             settings={settings}
+            onUpdatePersona={(p) => setPersona(p)}
             onOpenDrawer={() => setIsDrawerOpen(true)}
             onOpenShare={() => setIsShareModalOpen(true)}
             onOpenImport={() => setCurrentView("import")}
